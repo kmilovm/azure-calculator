@@ -15,7 +15,7 @@ const CalculatorForm: React.FC = () => {
   const [number1, setNumber1] = useState<number>(0);
   const [number2, setNumber2] = useState<number>(0);
   const [operation, setOperation] = useState<string>("add");
-  const [result, setResult] = useState<number | null>(null);
+  const [result, setResult] = useState<string | null>(null);
   const [signalRConnectionInfo, setSignalRConnectionInfo] = useState<SignalRConnectionInfo>();
 
   useEffect(() => {
@@ -61,6 +61,7 @@ const CalculatorForm: React.FC = () => {
   }, [signalRConnectionInfo]);
 
   const handleCalculate = async () => {
+    setResult('Sending operation to server, please wait!');
     const signalRMessage : SignalRMessage = {
       userId:"calculator",
       num1:number1,
@@ -89,7 +90,7 @@ const CalculatorForm: React.FC = () => {
     >
       <Card sx={{ minWidth: 275 }}>
         <CardContent>
-          <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
+          <Typography sx={{ fontSize: 16 }} color="text.secondary" gutterBottom>
             Welcome to Azure Calculator
           </Typography>
           <input
