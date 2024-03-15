@@ -1,81 +1,139 @@
 "use client";
-
-import React, { useState } from "react";
+import * as React from "react";
+import Box from "@mui/material/Box";
+import Card from "@mui/material/Card";
+import CardActions from "@mui/material/CardActions";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import Typography from "@mui/material/Typography";
+import { useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
+import { SignalRConnectionInfo } from "../models/signalRConnectionInfo";
+import { SignalRMessage } from "../models/signalRMessage";
 
-const  Calculator =() => {
-  const [number1, setNumber1] = useState(0);
-  const [number2, setNumber2] = useState(0);
-  const [operation, setOperation] = useState("add");
-  const [result, setResult] = useState(0);
+const CalculatorForm: React.FC = () => {
+  const [number1, setNumber1] = useState<number>(0);
+  const [number2, setNumber2] = useState<number>(0);
+  const [operation, setOperation] = useState<string>("add");
+  const [result, setResult] = useState<number | null>(null);
+  const [signalRConnectionInfo, setSignalRConnectionInfo] = useState<SignalRConnectionInfo>();
 
-  const connection = new signalR.HubConnectionBuilder()
-    .withUrl(process.env.NEXT_PUBLIC_SIGNALR_HUB_URL)
-    .configureLogging(signalR.LogLevel.Information)
-    .build();
+  useEffect(() => {
+    if (!signalRConnectionInfo) {
+      const getSignalRConnectionInfo = async () => {
+        const response = await fetch(process.env.NEXT_PUBLIC_FUNCTION_NEGOCIATE, {
+          method: "POST",
+          headers: {
+            "x-ms-client-principal-id": "kmi",
+          }
+        });
+    
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        } else {
+          response.json().then(result => {
+            console.log(result)
+            setSignalRConnectionInfo(result)
+          });
+        }
+      };
+      getSignalRConnectionInfo();
+    }
+  }, []);
 
-  connection.on("ReceiveResult", (res) => {
-    setResult(res);
-  });
+  useEffect(() => {
+    if (signalRConnectionInfo) {
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl(signalRConnectionInfo.url, {
+          accessTokenFactory: () => {
+            return signalRConnectionInfo.accessToken;
+          },
+        })
+        .configureLogging(signalR.LogLevel.Debug)
+        .build();
 
-  connection.start().catch((err) => console.error(err.toString()));
+      connection.on("ReceiveMessage", (res) => {
+        setResult(res);
+      });
 
-  const calculate = async () => {
+      connection.start().catch((err) => console.error(err.toString()));
+    }
+  }, [signalRConnectionInfo]);
+
+  const handleCalculate = async () => {
+    const signalRMessage : SignalRMessage = {
+      userId:"calculator",
+      num1:number1,
+      num2:number2,
+      operation:operation
+    }    
     const response = await fetch(process.env.NEXT_PUBLIC_FUNCTION_API, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        num1: number1,
-        num2: number2,
-        operation: operation,
-      }),
+      body: JSON.stringify(signalRMessage),
     });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    }    
   };
 
   return (
-    <div className="flex flex-col items-center justify-around">
-      <label htmlFor="number1">Provide Number 1:</label>
-      <input
-        className="text-black"
-        id="number1"
-        type="number"
-        title="number 1"
-        alt="number 1"
-        value={number1}
-        onChange={e => setNumber1(Number(e.target.value))}
-      />
-      <label htmlFor="operation">Select Operation:</label>
-      <select
-        id="operation"
-        className="text-black"
-        value={operation}
-        title="operation"
-        onChange={(e) => setOperation(e.target.value)}
-      >
-        <option value="add">Add</option>
-        <option value="subtract">Subtract</option>
-        <option value="multiply">Multiply</option>
-        <option value="divide">Divide</option>
-      </select>
-      <label htmlFor="number2">Provide Number 2:</label>
-      <input
-        id="number2"
-        className="text-black"
-        type="number"
-        title="number 2"
-        alt="number 2"
-        value={number2}
-        onChange={(e) => setNumber2(Number(e.target.value))}
-      />
-      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={calculate}>Calculate</button>
-      <p>Result: {result}</p>
-    </div>
-  );  
-}
-export default Calculator;
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      style={{ minHeight: "100vh" }}
+    >
+      <Card sx={{ minWidth: 275 }}>
+        <CardContent>
+          <Typography sx={{ fontSize: 14 }} color="text.secondary" gutterBottom>
+            Welcome to Azure Calculator
+          </Typography>
+          <input
+            type="number"
+            title="number1"
+            placeholder="Enter number 1"
+            className="w-full p-2 mb-2 border rounded"
+            value={number1}
+            onChange={(e) => setNumber1(Number(e.target.value))}
+          />
+          <select
+            title="operation"
+            className="w-full p-2 mb-2 border rounded"
+            value={operation}
+            onChange={(e) => setOperation(e.target.value)}
+          >
+            <option value="add">Add</option>
+            <option value="substract">Subtract</option>
+            <option value="multiply">Multiply</option>
+            <option value="divide">Divide</option>
+          </select>
+          <input
+            type="number"
+            title="number2"
+            placeholder="Enter number 2"
+            className="w-full p-2 mb-2 border rounded"
+            value={number2}
+            onChange={(e) => setNumber2(Number(e.target.value))}
+          />
+        </CardContent>
+        <CardActions>
+          <Button size="small" onClick={handleCalculate}>
+            Calculate
+          </Button>
+        </CardActions>
+        <Box display="flex" justifyContent="center" alignItems="center">
+          <Typography sx={{ fontSize: 16 }} color="text.secondary" gutterBottom>
+            Resultant:{" "}
+            <b>{result != null ? result : "Not computed yet"}</b>
+          </Typography>
+        </Box>
+      </Card>
+    </Box>
+  );
+};
+
+export default CalculatorForm;
