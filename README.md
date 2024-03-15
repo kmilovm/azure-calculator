@@ -28,3 +28,9 @@ To learn more about Next.js, take a look at the following resources:
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+
+## Attention
+Do not forget to add the addresses needed to interact within signalr serverless instance at env.development as follows:
+- NEXT_PUBLIC_SIGNALR_HUB_URL=[YourAzureSignalrUrl]/?hub=calculator;
+- NEXT_PUBLIC_FUNCTION_NEGOCIATE=[YourFunctionsApiUrl]/Negotiate?Code=[YourAzureSignalrCode]
+- NEXT_PUBLIC_FUNCTION_API=[YourFunctionsApiUrl]/Calculate
