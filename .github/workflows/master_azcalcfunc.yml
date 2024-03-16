@@ -27,12 +27,15 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
+
+      - name: Compress directory
+        run: 7z a node-app.7z ./node-app
         
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: ./dist
+          path: ./node-app.7z
 
   deploy:
     runs-on: ubuntu-latest
@@ -46,6 +49,9 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: node-app
+          
+      - name: Extract files
+        run: 7z x node-app.7z
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
