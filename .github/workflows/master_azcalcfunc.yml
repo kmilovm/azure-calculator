@@ -29,7 +29,7 @@ jobs:
           npm run test --if-present
 
       - name: Compress directory
-        run: 7z a node-app.7z ./*
+        run: 7z a node-app.7z .
         
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
