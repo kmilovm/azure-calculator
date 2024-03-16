@@ -54,4 +54,4 @@ jobs:
           app-name: 'AzCalcFunc'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_955A83B2E13A4976BCCAF2DEF6FF7A85 }}
-          package: ./dist
+          package: .
