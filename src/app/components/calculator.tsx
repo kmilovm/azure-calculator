@@ -100,7 +100,20 @@ const CalculatorForm: React.FC = () => {
         <CardHeader
           action={<IconButton aria-label="settings"></IconButton>}
           title="Welcome to Azure Calculator"
-          subheader="Please use the wheel or arrows to select the numbers and the operation and press calculate button"
+          subheader={<Box>            
+            <Box 
+              component="section" 
+              height={100}
+              width={500}              
+              display="flex"
+              alignItems="center"
+              textAlign="justify"
+              gap={2}              
+              sx={{ p: 2, border: '1px grey' }}>
+              Please use the wheel or arrows to select the numbers
+              and the operation and press calculate button
+            </Box>            
+          </Box>}
         />
         <Divider />
         <CardContent>
@@ -153,7 +166,7 @@ const CalculatorForm: React.FC = () => {
           </Box>
         </CardContent>
         <CardActions>
-          <Box display="flex" justifyContent="left" alignItems="left">
+          <Box sx={{display:'flex', justifyContent:'left', alignItems:'center'}}>
             <Button size="small" onClick={handleCalculate}>
               Calculate
             </Button>
