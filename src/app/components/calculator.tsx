@@ -2,27 +2,61 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
-import CardActions from "@mui/material/CardActions";
 import CardContent from "@mui/material/CardContent";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as signalR from "@microsoft/signalr";
 import { SignalRConnectionInfo } from "../models/signalRConnectionInfo";
 import { SignalRMessage } from "../models/signalRMessage";
 import CardHeader from "@mui/material/CardHeader";
 import IconButton from "@mui/material/IconButton";
 import Divider from "@mui/material/Divider";
+import TextField from "@mui/material/TextField";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import Stack from "@mui/material/Stack";
+import { LinearProgress } from "@mui/material";
 
 const CalculatorForm: React.FC = () => {
-  const [number1, setNumber1] = useState<number>(0);
-  const [number2, setNumber2] = useState<number>(0);
+  const [number1, setNumber1] = useState<string>("");
+  const [number2, setNumber2] = useState<string>("");
+  const number1AsNumber = Number(number1);
+  const number2AsNumber = Number(number2);
   const [operation, setOperation] = useState<string>("add");
   const [result, setResult] = useState<string | null>(null);
-  const [signalRConnectionInfo, setSignalRConnectionInfo] =  useState<SignalRConnectionInfo>();
+  const [showProgress, setShowProgress] = useState<boolean>(false);
+  const [signalRConnectionInfo, setSignalRConnectionInfo] =
+    useState<SignalRConnectionInfo>();
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(
+    null
+  );
+
+  const handleCalculate = useCallback(async () => {
+    setResult("Sending operation to server, please wait!");
+    setShowProgress(true);
+    const signalRMessage: SignalRMessage = {
+      userId: "calculator",
+      num1: number1AsNumber,
+      num2: number2AsNumber,
+      operation: operation,
+    };
+    const url = process.env.NEXT_PUBLIC_FUNCTION_API!;
+    await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authentication: `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`,
+      },
+      body: JSON.stringify(signalRMessage),
+    })
+      .then((res) => {})
+      .catch((error) => {
+        throw new Error(`HTTP error! status: ${error}`);
+      });
+  }, [number1AsNumber, number2AsNumber, operation]);
 
   useEffect(() => {
-    
     if (!signalRConnectionInfo) {
       const getSignalRConnectionInfo = async () => {
         const url = process.env.NEXT_PUBLIC_FUNCTION_NEGOCIATE!;
@@ -30,7 +64,6 @@ const CalculatorForm: React.FC = () => {
       };
       getSignalRConnectionInfo();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -45,51 +78,40 @@ const CalculatorForm: React.FC = () => {
         .build();
 
       connection.on("ReceiveMessage", (res) => {
-        setResult(res);
+        setShowProgress(false);
+        setResult(`Result: ${res}`);
       });
 
       connection.start().catch((err) => console.error(err.toString()));
+      setConnection(connection);
     }
+    return () => {
+      connection?.stop();
+    };
   }, [signalRConnectionInfo]);
 
-  const handleCalculate = async () => {
-    setResult("Sending operation to server, please wait!");
-    const signalRMessage: SignalRMessage = {
-      userId: "calculator",
-      num1: number1,
-      num2: number2,
-      operation: operation,
-    };
-    const url = process.env.NEXT_PUBLIC_FUNCTION_API!;
-    await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authentication": `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`
-      },
-      body: JSON.stringify(signalRMessage),
-    })
-      .then((res) => {})
-      .catch((error) => {
-        throw new Error(`HTTP error! status: ${error}`);
-      });
-  };
-
-  async function getSignalConnectionInfo(url: string, setSignalRConnectionInfo: React.Dispatch<React.SetStateAction<SignalRConnectionInfo | undefined>>) {
+  async function getSignalConnectionInfo(
+    url: string,
+    setSignalRConnectionInfo: React.Dispatch<
+      React.SetStateAction<SignalRConnectionInfo | undefined>
+    >
+  ) {
     await fetch(url, {
       method: "POST",
       headers: {
         "x-ms-client-principal-id": "Calculate",
-        "Authentication": `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`
+        Authentication: `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`,
       },
-    }).then((res) => {
-      res.json().then((result) => {
-        setSignalRConnectionInfo(result);
+    })
+      .then((res) => {
+        res.json().then((result) => {
+          setSignalRConnectionInfo(result);
+        });
+      })
+      .catch((error) => {
+        console.log("error", error);
+        throw new Error(`HTTP error! status: ${error}`);
       });
-    }).catch((error) => {
-      console.log("error", error);
-      throw new Error(`HTTP error! status: ${error}`);
-    });
   }
 
   return (
@@ -103,20 +125,21 @@ const CalculatorForm: React.FC = () => {
         <CardHeader
           action={<IconButton aria-label="settings"></IconButton>}
           title="Welcome to Azure Calculator"
-          subheader={<Box>            
-            <Box 
-              component="section" 
-              height={100}
-              width={500}              
-              display="flex"
-              alignItems="center"
-              textAlign="justify"
-              gap={2}              
-              sx={{ p: 2, border: '1px grey' }}>
-              Please use the wheel or arrows to select the numbers
-              and the operation and press calculate button
-            </Box>            
-          </Box>}
+          subheader={
+            <Box>
+              <Box
+                component="section"
+                display="flex"
+                alignItems="center"
+                textAlign="justify"
+                gap={2}
+                sx={{ p: 2, border: "1px grey" }}
+              >
+                Please provide the numbers and the operation and press calculate
+                button
+              </Box>
+            </Box>
+          }
         />
         <Divider />
         <CardContent>
@@ -125,60 +148,94 @@ const CalculatorForm: React.FC = () => {
               display: "flex",
               m: 1,
               p: 1,
-              bgcolor: (theme) =>
-                theme.palette.mode === "dark" ? "#101010" : "#fff",
-              color: (theme) =>
-                theme.palette.mode === "dark" ? "grey.300" : "grey.800",
+              bgcolor: "#fff",
+              color: "grey.800",
               border: "1px solid",
-              borderColor: (theme) =>
-                theme.palette.mode === "dark" ? "grey.800" : "grey.300",
+              borderColor: "grey.300",
               borderRadius: 2,
+              textAlign: "center",
+              justifyContent: "center",
               fontSize: "0.875rem",
               fontWeight: "700",
             }}
           >
-            <input
-              type="number"
-              title="number1"
-              placeholder="Enter number 1"
-              className="w-full p-2 mb-2 border rounded text-center"
+            <TextField
+              id="number1"
+              label="Number 1"
+              variant="outlined"
               value={number1}
-              onKeyPress={(event) => { event.preventDefault(); }} onPaste={(event) => { event.preventDefault(); }} 
-              onChange={(e) => setNumber1(Number(e.target.value))}
-            />
-            <select
-              title="operation"
-              className="w-full p-2 mb-2 border rounded"
+              onChange={(e) => setNumber1(e.target.value)}
+            ></TextField>
+            <Select
+              labelId="operation"
+              id="operation"
               value={operation}
+              label="Operation"
               onChange={(e) => setOperation(e.target.value)}
             >
-              <option value="add">Add</option>
-              <option value="subtract">Subtract</option>
-              <option value="multiply">Multiply</option>
-              <option value="divide">Divide</option>
-            </select>
-            <input
-              type="number"
-              title="number2"
-              placeholder="Enter number 2"
-              className="w-full p-2 mb-2 border rounded text-center"
+              <MenuItem value={"add"}>Add</MenuItem>
+              <MenuItem value={"subtract"}>Subtract</MenuItem>
+              <MenuItem value={"multiply"}>Multiply</MenuItem>
+              <MenuItem value={"divide"}>Divide</MenuItem>
+            </Select>
+            <TextField
+              id="number2"
+              label="Number 2"
+              variant="outlined"
               value={number2}
-              onKeyPress={(event) => { event.preventDefault(); }} onPaste={(event) => { event.preventDefault(); }} 
-              onChange={(e) => setNumber2(Number(e.target.value))}
-            />
+              onChange={(e) => setNumber2(e.target.value)}
+            ></TextField>
           </Box>
         </CardContent>
-        <CardActions>
-          <Box sx={{display:'flex', justifyContent:'left', alignItems:'center'}}>
-            <Button size="small" onClick={handleCalculate}>
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          sx={{ m: 1, p: 1 }}
+        >
+          { result && (
+          <Stack direction="column">
+            <Box
+              sx={{
+                display: "flex",
+                m: 1,
+                p: 1,
+                bgcolor: "#fff",
+                color: "grey.800",
+                border: "1px solid",
+                borderColor: "grey.300",
+                borderRadius: 2,
+                textAlign: "center",
+                justifyContent: "center",
+                fontSize: "0.875rem",
+                fontWeight: "700",
+                width: "60vh"
+              }}>
+              <Typography
+                sx={{ fontSize: 18 }}
+                color="text.secondary"
+                gutterBottom>
+                {result ?? ""}
+              </Typography>
+            </Box>
+            {showProgress && <LinearProgress></LinearProgress>}
+          </Stack>)}
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            m: 1,
+            p: 1,
+          }}
+        >
+          {(number2AsNumber !== 0 ||
+            (number2AsNumber === 0 && operation !== "divide")) && (
+            <Button size="small" onClick={handleCalculate} variant="outlined">
               Calculate
             </Button>
-          </Box>
-        </CardActions>
-        <Box display="flex" justifyContent="center" alignItems="center">
-          <Typography sx={{ fontSize: 16 }} color="text.secondary" gutterBottom>
-            Resultant: <b>{result ?? "Not computed yet"}</b>
-          </Typography>
+          )}
         </Box>
       </Card>
     </Box>
@@ -186,6 +243,3 @@ const CalculatorForm: React.FC = () => {
 };
 
 export default CalculatorForm;
-
-
- 
