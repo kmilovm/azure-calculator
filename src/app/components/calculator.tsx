@@ -22,6 +22,7 @@ const CalculatorForm: React.FC = () => {
   const [signalRConnectionInfo, setSignalRConnectionInfo] =  useState<SignalRConnectionInfo>();
 
   useEffect(() => {
+    
     if (!signalRConnectionInfo) {
       const getSignalRConnectionInfo = async () => {
         const url = process.env.NEXT_PUBLIC_FUNCTION_NEGOCIATE!;
@@ -64,6 +65,7 @@ const CalculatorForm: React.FC = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authentication": `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`
       },
       body: JSON.stringify(signalRMessage),
     })
@@ -78,6 +80,7 @@ const CalculatorForm: React.FC = () => {
       method: "POST",
       headers: {
         "x-ms-client-principal-id": "Calculate",
+        "Authentication": `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`
       },
     }).then((res) => {
       res.json().then((result) => {
