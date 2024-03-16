@@ -27,17 +27,12 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-
-      - name: Compress directory
-        uses: edgarrc/action-7z@v1
-        with:
-          args: 7z a -t7z -mx=9 release.7z ./*
         
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: .
+          path: ./dist
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,9 +46,6 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: node-app
-          
-      - name: Extract files
-        run: 7z x release.7z
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
