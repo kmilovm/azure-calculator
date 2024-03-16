@@ -51,7 +51,7 @@ jobs:
           name: node-app
           
       - name: Extract files
-        run: 7z x node-app.7z
+        run: 7z x node-app.7z .
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v2
