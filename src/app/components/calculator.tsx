@@ -46,7 +46,7 @@ const CalculatorForm: React.FC = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authentication: `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`,
+        //Authentication: `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`,
       },
       body: JSON.stringify(signalRMessage),
     })
@@ -100,7 +100,7 @@ const CalculatorForm: React.FC = () => {
       method: "POST",
       headers: {
         "x-ms-client-principal-id": "Calculate",
-        Authentication: `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`,
+        //Authentication: `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`,
       },
     })
       .then((res) => {
@@ -113,6 +113,16 @@ const CalculatorForm: React.FC = () => {
         throw new Error(`HTTP error! status: ${error}`);
       });
   }
+
+  function validateInput() {
+    if (isNaN(number1AsNumber) || isNaN(number2AsNumber)) {
+      console.log("Please check the values given at numbers!");    
+      return false;  
+    }
+    return number2AsNumber !== 0 ||
+      (number2AsNumber === 0 && operation !== "divide");
+  }
+  
 
   return (
     <Box
@@ -230,8 +240,7 @@ const CalculatorForm: React.FC = () => {
             p: 1,
           }}
         >
-          {(number2AsNumber !== 0 ||
-            (number2AsNumber === 0 && operation !== "divide")) && (
+          {(validateInput()) && (
             <Button size="small" onClick={handleCalculate} variant="outlined">
               Calculate
             </Button>
@@ -243,3 +252,5 @@ const CalculatorForm: React.FC = () => {
 };
 
 export default CalculatorForm;
+
+
