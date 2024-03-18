@@ -19,6 +19,8 @@ import Stack from "@mui/material/Stack";
 import { LinearProgress } from "@mui/material";
 
 const CalculatorForm: React.FC = () => {
+  const MIN_SAFE_INTEGER = Number.MIN_SAFE_INTEGER; // -9007199254740991
+  const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER; // 9007199254740991
   const [number1, setNumber1] = useState<string>("");
   const [number2, setNumber2] = useState<string>("");
   const number1AsNumber = Number(number1);
@@ -118,6 +120,11 @@ const CalculatorForm: React.FC = () => {
     if (isNaN(number1AsNumber) || isNaN(number2AsNumber)) {
       console.log("Please check the values given at numbers!");    
       return false;  
+    }
+    if (number1AsNumber < MIN_SAFE_INTEGER || number1AsNumber > MAX_SAFE_INTEGER ||
+        number2AsNumber < MIN_SAFE_INTEGER || number2AsNumber > MAX_SAFE_INTEGER) {
+        console.log("The numbers are out of the safe integer range!");
+        return false;
     }
     return number2AsNumber !== 0 ||
       (number2AsNumber === 0 && operation !== "divide");
@@ -250,7 +257,4 @@ const CalculatorForm: React.FC = () => {
     </Box>
   );
 };
-
 export default CalculatorForm;
-
-
