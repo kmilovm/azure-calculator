@@ -47,14 +47,13 @@ const CalculatorForm: React.FC = () => {
     await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        //Authentication: `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`,
+        "Content-Type": "application/json",        
       },
       body: JSON.stringify(signalRMessage),
     })
       .then((res) => {})
       .catch((error) => {
-        throw new Error(`HTTP error! status: ${error}`);
+        console.log(error);        
       });
   }, [number1AsNumber, number2AsNumber, operation]);
 
@@ -101,8 +100,7 @@ const CalculatorForm: React.FC = () => {
     await fetch(url, {
       method: "POST",
       headers: {
-        "x-ms-client-principal-id": "Calculate",
-        //Authentication: `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_BEARER}`,
+        "x-ms-client-principal-id": "Calculate",        
       },
     })
       .then((res) => {
@@ -111,8 +109,7 @@ const CalculatorForm: React.FC = () => {
         });
       })
       .catch((error) => {
-        console.log("error", error);
-        throw new Error(`HTTP error! status: ${error}`);
+        console.log(error);        
       });
   }
 
