@@ -17,6 +17,7 @@ import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import { LinearProgress } from "@mui/material";
+import { v4 as uuidv4 } from 'uuid'
 
 const CalculatorForm: React.FC = () => {
   const MIN_SAFE_INTEGER = Number.MIN_SAFE_INTEGER; // -9007199254740991
@@ -28,17 +29,15 @@ const CalculatorForm: React.FC = () => {
   const [operation, setOperation] = useState<string>("add");
   const [result, setResult] = useState<string | null>(null);
   const [showProgress, setShowProgress] = useState<boolean>(false);
-  const [signalRConnectionInfo, setSignalRConnectionInfo] =
-    useState<SignalRConnectionInfo>();
-  const [connection, setConnection] = useState<signalR.HubConnection | null>(
-    null
-  );
+  const [signalRConnectionInfo, setSignalRConnectionInfo] =  useState<SignalRConnectionInfo>();
+  const [connection, setConnection] = useState<signalR.HubConnection | null>(null);
+  const [guid] = useState(uuidv4());
 
   const handleCalculate = useCallback(async () => {
     setResult("Sending operation to server, please wait!");
     setShowProgress(true);
     const signalRMessage: SignalRMessage = {
-      userId: "calculator",
+      userId: guid,
       num1: number1AsNumber,
       num2: number2AsNumber,
       operation: operation,
@@ -62,7 +61,7 @@ const CalculatorForm: React.FC = () => {
       const getSignalRConnectionInfo = async () => {
         const url = process.env.NEXT_PUBLIC_FUNCTION_NEGOCIATE!;
         await getSignalConnectionInfo(url, setSignalRConnectionInfo);
-      };
+      };     
       getSignalRConnectionInfo();
     }
   }, []);
@@ -70,7 +69,7 @@ const CalculatorForm: React.FC = () => {
   useEffect(() => {
     if (signalRConnectionInfo) {
       const connection = new signalR.HubConnectionBuilder()
-        .withUrl(signalRConnectionInfo.url, {
+        .withUrl(`${signalRConnectionInfo.url}&userId=${guid}`, {
           accessTokenFactory: () => {
             return signalRConnectionInfo.accessToken;
           },
@@ -79,6 +78,7 @@ const CalculatorForm: React.FC = () => {
         .build();
 
       connection.on("ReceiveMessage", (res) => {
+        console.log(connection);
         setShowProgress(false);
         setResult(`Result: ${res}`);
       });
@@ -100,7 +100,7 @@ const CalculatorForm: React.FC = () => {
     await fetch(url, {
       method: "POST",
       headers: {
-        "x-ms-client-principal-id": "Calculate",        
+        "x-ms-client-principal-id": guid,        
       },
     })
       .then((res) => {
